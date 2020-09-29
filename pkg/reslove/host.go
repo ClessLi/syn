@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"time"
 )
 
 var (
-	ipv4Match = regexp.MustCompile(`(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})`).FindStringSubmatch
+	ipv4Match = regexp.MustCompile(ipv4AddressReg).FindStringSubmatch
 
 	// Error
 	InvalidIpv4Address = fmt.Errorf("invalid ipv4 address")
@@ -16,11 +17,13 @@ var (
 
 type VisitHosts struct {
 	visits map[string]*Host
-	alarm  map[string]bool
+	//alarm  map[string]bool
+	alarm Queue
 }
 
 func NewHosts() *VisitHosts {
-	return &VisitHosts{visits: make(map[string]*Host), alarm: make(map[string]bool)}
+	//return &VisitHosts{visits: make(map[string]*Host), alarm: make(map[string]bool)}
+	return &VisitHosts{visits: make(map[string]*Host), alarm: NewQueue()}
 }
 
 func (hs *VisitHosts) AuthFailed(ipv4 string, threshold int) error {
@@ -32,14 +35,29 @@ func (hs *VisitHosts) AuthFailed(ipv4 string, threshold int) error {
 		hs.visits[ipv4] = host
 	}
 	hs.visits[ipv4].AddAuthFailCount()
-	hs.alarm[ipv4] = hs.visits[ipv4].ThresholdReached(threshold)
+	//hs.alarm[ipv4] = hs.visits[ipv4].ThresholdReached(threshold)
+	if hs.visits[ipv4].ThresholdReached(threshold) && !hs.visits[ipv4].isAlarmed {
+		//hs.alarm.Add(hs.visits[ipv4])
+		hs.alarm.Add(ipv4)
+	}
 	return nil
+}
+
+func (hs *VisitHosts) ResetHostFailCount(ipv4 string) error {
+	if hs.visits[ipv4] != nil {
+		//hs.alarm[ipv4] = false
+		hs.visits[ipv4].ResetAuthFailCount()
+		hs.visits[ipv4].ResetMarkTime()
+		return nil
+	}
+	return fmt.Errorf("%s: %s", NoHostRecord, ipv4)
 }
 
 func (hs *VisitHosts) ResetHostRecord(ipv4 string) error {
 	if hs.visits[ipv4] != nil {
-		hs.alarm[ipv4] = false
 		hs.visits[ipv4].ResetAuthFailCount()
+		hs.visits[ipv4].ResetMarkTime()
+		hs.visits[ipv4].isAlarmed = false
 		return nil
 	}
 	return fmt.Errorf("%s: %s", NoHostRecord, ipv4)
@@ -48,6 +66,8 @@ func (hs *VisitHosts) ResetHostRecord(ipv4 string) error {
 type Host struct {
 	ipv4Address      [4]byte
 	authFailureCount int
+	timestamp        time.Time
+	isAlarmed        bool
 }
 
 func NewHost(ipv4 string) (*Host, error) {
@@ -58,12 +78,14 @@ func NewHost(ipv4 string) (*Host, error) {
 	return &Host{
 		ipv4Address:      ipv4Address,
 		authFailureCount: 0,
+		//timestamp:        time.Unix(0, 0),
+		timestamp: time.Now(),
 	}, nil
 }
 
 func strToIpv4(ipv4 string) ([4]byte, error) {
 	address := ipv4Match(ipv4)
-	ipv4Address := [4]byte{-1, -1, -1, -1}
+	ipv4Address := [4]byte{}
 	isInvalidAddress := false
 	if len(address) != 5 {
 		isInvalidAddress = true
@@ -92,6 +114,10 @@ func (h *Host) AddAuthFailCount() {
 
 func (h *Host) ResetAuthFailCount() {
 	h.authFailureCount = 0
+}
+
+func (h *Host) ResetMarkTime() {
+	h.timestamp = time.Now()
 }
 
 func (h Host) ThresholdReached(num int) bool {

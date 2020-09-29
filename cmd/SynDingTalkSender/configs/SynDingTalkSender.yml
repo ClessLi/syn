@@ -1,0 +1,16 @@
+DingTalkAPI:
+  Token: 'xxxxxx'
+  Secret: 'xxxxxx' #非必选
+#  Hostname: "oapi.dingtalk.com"
+#  Port: 443
+#  Protocol: https
+SynConfig:
+  secureLogPath: "/var/log/secure" # 默认为/var/log/secure
+  authFailedThreshold: 5 # 默认为5
+  alarmDelaySec: 600 # 默认为600秒
+  SynLogDir: "logs" # 默认为logs
+  SynLogLevel: 3 # 默认为3
+HostInfo:
+  Env: "Sandbox"
+  IP: "127.0.0.1"
+  HostLabel: "测试服务器" # 选填
