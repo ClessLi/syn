@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ClessLi/syn/internal/pkg/dingTalkSender"
 	"os"
+	"time"
 )
 
 func main() {
@@ -21,19 +22,22 @@ func main() {
 	case "":
 		err = dingTalkSender.Start()
 		if err == nil {
-			fmt.Println("SynDingTalkSender is stopped")
+			fmt.Printf("%s SynDingTalkSender is stopped.\n", time.Now().Format("2006-01-02 15:04:05.000"))
 			os.Exit(0)
 		}
 	case "stop":
 		err = dingTalkSender.Stop()
 		if err == nil {
-			fmt.Println("SynDingTalkSender is finished")
+			fmt.Printf("%s SynDingTalkSender is finished.\n", time.Now().Format("2006-01-02 15:04:05.000"))
 			os.Exit(0)
 		}
 	case "restart":
 		err = dingTalkSender.Restart()
 		if err == nil {
-			fmt.Println("SynDingTalkSender was restarted, and it's stopped, now.")
+			fmt.Printf("%s SynDingTalkSender was restarted, and it's stopped, now.\n", time.Now().Format("2006-01-02 15:04:05.000"))
+			os.Exit(0)
+		} else if err == dingTalkSender.SubProcessStarted {
+			fmt.Printf("%s SynDingTalkSender was restarted, and is running, now.\n", time.Now().Format("2006-01-02 15:04:05.000"))
 			os.Exit(0)
 		}
 	case "status":
@@ -45,6 +49,10 @@ func main() {
 			fmt.Printf("SynDingTalkSender <PID %d> is running\n", pid)
 			os.Exit(0)
 		}
+	}
+	if err == dingTalkSender.SubProcessStarted {
+		fmt.Printf("%s SynDingTalkSender is started.\n", time.Now().Format("2006-01-02 15:04:05.000"))
+		os.Exit(0)
 	}
 	fmt.Println(err.Error())
 	os.Exit(1)

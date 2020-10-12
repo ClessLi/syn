@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+var (
+	SubProcessStarted = fmt.Errorf("sub process started")
+)
+
 // Start, 守护进程 start 方法函数
 // 返回值:
 //     错误
@@ -48,7 +52,7 @@ func Start() (err error) {
 			return procErr
 		}
 
-		return nil
+		return SubProcessStarted
 	} else { // 子进程时
 		// 进程结束前操作
 		defer func() {
